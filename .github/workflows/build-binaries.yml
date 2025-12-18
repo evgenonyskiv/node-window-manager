@@ -13,8 +13,6 @@ jobs:
       matrix:
         os: [macos-latest, windows-latest]
         node-version: [16.x, 18.x, 20.x]
-        exclude:
-          # Можно исключить некоторые комбинации если нужно
     name: Build on ${{ matrix.os }} with Node ${{ matrix.node-version }}
 
     steps:
