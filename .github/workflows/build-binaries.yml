@@ -88,14 +88,13 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
+      - name: Install electron-rebuild
+        run: yarn add -D electron-rebuild
+
       - name: Rebuild native module for Electron
-        run: npm run rebuild
+        run: npx electron-rebuild -v 32.1.2 -f
         env:
           SKIP_ACCESSIBILITY_CHECK: true
-          npm_config_disturl: https://electronjs.org/headers
-          npm_config_target: 32.1.2
-          npm_config_runtime: electron
-          npm_config_build_from_source: true
 
       - name: Prepare artifacts
         shell: bash
