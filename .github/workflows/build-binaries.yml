@@ -89,15 +89,13 @@ jobs:
         run: npm run build
 
       - name: Rebuild native module for Electron
-        run: |
-          npm_config_disturl=https://electronjs.org/headers \
-          npm_config_target=32.1.2 \
-          npm_config_runtime=electron \
-          npm_config_cache=$(npm config get cache) \
-          npm_config_build_from_source=true \
-          npm run rebuild
+        run: npm run rebuild
         env:
           SKIP_ACCESSIBILITY_CHECK: true
+          npm_config_disturl: https://electronjs.org/headers
+          npm_config_target: 32.1.2
+          npm_config_runtime: electron
+          npm_config_build_from_source: true
 
       - name: Prepare artifacts
         shell: bash
