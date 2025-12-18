@@ -32,7 +32,7 @@ jobs:
         run: npm run build
 
       - name: Rebuild native module for Electron
-        run: node-gyp rebuild
+        run: npm run rebuild
         env:
           SKIP_ACCESSIBILITY_CHECK: true
           npm_config_disturl: https://electronjs.org/headers
