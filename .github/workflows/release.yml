@@ -58,7 +58,7 @@ jobs:
           cd ..
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.os }}
           path: |
@@ -124,7 +124,7 @@ jobs:
           cd ..
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-electron-${{ matrix.os }}
           path: |
@@ -143,11 +143,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
+      - name: Download release artifacts (macOS)
+        uses: actions/download-artifact@v4
         with:
-          path: artifacts
-          pattern: release-*
+          name: release-macos-latest
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Download release artifacts (Windows)
+        uses: actions/download-artifact@v4
+        with:
+          name: release-windows-latest
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Download Electron release artifacts (macOS)
+        uses: actions/download-artifact@v4
+        with:
+          name: release-electron-macos-latest
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Download Electron release artifacts (Windows)
+        uses: actions/download-artifact@v4
+        with:
+          name: release-electron-windows-latest
+          path: artifacts/
+          merge-multiple: true
 
       - name: Prepare release files
         shell: bash

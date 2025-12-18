@@ -54,7 +54,7 @@ jobs:
           echo "Build date: $(date)" >> artifacts/build-info.txt
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.os }}-node-${{ matrix.node-version }}
           path: artifacts/
@@ -109,7 +109,7 @@ jobs:
           echo "Build date: $(date)" >> artifacts/build-info.txt
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.os }}-electron-32.1.2
           path: artifacts/
