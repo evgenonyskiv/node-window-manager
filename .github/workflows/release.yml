@@ -6,70 +6,6 @@ on:
       - 'v*'
 
 jobs:
-  build-and-release:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-        node-version: [18.x]
-    name: Build for release on ${{ matrix.os }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Install dependencies
-        run: yarn install --ignore-scripts
-
-      - name: Build TypeScript
-        run: npm run build
-
-      - name: Rebuild native module
-        run: npm run rebuild
-        env:
-          SKIP_ACCESSIBILITY_CHECK: true
-
-      - name: Prepare release artifacts
-        shell: bash
-        run: |
-          mkdir -p release
-          if [ -d "build/Release" ]; then
-            cp -r build/Release release/ || true
-          fi
-          if [ -d "dist" ]; then
-            cp -r dist release/ || true
-          fi
-          # Создаем архив для релиза
-          cd release
-          PLATFORM_NAME="${{ matrix.os }}"
-          if [ "${{ runner.os }}" == "macOS" ]; then
-            PLATFORM_NAME="macos"
-            tar -czf ../node-window-manager-${{ github.ref_name }}-${PLATFORM_NAME}.tar.gz .
-          elif [ "${{ runner.os }}" == "Windows" ]; then
-            PLATFORM_NAME="windows"
-            # Используем PowerShell Compress-Archive если доступно, иначе tar
-            powershell -Command "Compress-Archive -Path * -DestinationPath ../node-window-manager-${{ github.ref_name }}-${PLATFORM_NAME}.zip -Force" || tar -czf ../node-window-manager-${{ github.ref_name }}-${PLATFORM_NAME}.tar.gz .
-          fi
-          cd ..
-
-      - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-${{ matrix.os }}
-          path: |
-            release/
-            node-window-manager-*.tar.gz
-            node-window-manager-*.zip
-          retention-days: 90
-
   build-electron-release:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -137,7 +73,7 @@ jobs:
           retention-days: 90
 
   create-release:
-    needs: [build-and-release, build-electron-release]
+    needs: [build-electron-release]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -145,20 +81,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Download release artifacts (macOS)
-        uses: actions/download-artifact@v4
-        with:
-          name: release-macos-latest
-          path: artifacts/
-          merge-multiple: true
-
-      - name: Download release artifacts (Windows)
-        uses: actions/download-artifact@v4
-        with:
-          name: release-windows-latest
-          path: artifacts/
-          merge-multiple: true
 
       - name: Download Electron release artifacts (macOS)
         uses: actions/download-artifact@v4

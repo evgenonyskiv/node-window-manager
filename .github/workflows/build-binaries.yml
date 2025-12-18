@@ -9,60 +9,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-        node-version: [16.x, 18.x, 20.x]
-    name: Build on ${{ matrix.os }} with Node ${{ matrix.node-version }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Install dependencies
-        run: yarn install --ignore-scripts
-
-      - name: Build TypeScript
-        run: npm run build
-
-      - name: Rebuild native module
-        run: npm run rebuild
-        env:
-          # Для macOS может потребоваться разрешение на доступность
-          SKIP_ACCESSIBILITY_CHECK: true
-
-      - name: Prepare artifacts
-        shell: bash
-        run: |
-          mkdir -p artifacts
-          if [ -d "build/Release" ]; then
-            cp -r build/Release artifacts/ || true
-          fi
-          if [ -d "dist" ]; then
-            cp -r dist artifacts/ || true
-          fi
-          # Создаем файл с информацией о сборке
-          echo "Platform: ${{ matrix.os }}" > artifacts/build-info.txt
-          echo "Node version: ${{ matrix.node-version }}" >> artifacts/build-info.txt
-          echo "Build date: $(date)" >> artifacts/build-info.txt
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: binaries-${{ matrix.os }}-node-${{ matrix.node-version }}
-          path: artifacts/
-          retention-days: 30
-
   build-electron:
     runs-on: ${{ matrix.os }}
     strategy:
