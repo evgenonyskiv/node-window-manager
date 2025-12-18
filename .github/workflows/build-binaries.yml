@@ -29,11 +29,8 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
 
-      - name: Update yarn.lock if needed
-        run: yarn install --ignore-scripts || true
-
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --ignore-scripts
+        run: yarn install --ignore-scripts
 
       - name: Build TypeScript
         run: npm run build
@@ -85,11 +82,8 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
 
-      - name: Update yarn.lock if needed
-        run: yarn install --ignore-scripts || true
-
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --ignore-scripts
+        run: yarn install --ignore-scripts
 
       - name: Build TypeScript
         run: npm run build
