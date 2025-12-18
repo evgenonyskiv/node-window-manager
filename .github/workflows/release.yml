@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-electron-release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    name: Build Electron 32.1.2 for release on ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --ignore-scripts
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Rebuild native module for Electron
+        run: npm run rebuild
+        env:
+          SKIP_ACCESSIBILITY_CHECK: true
+          npm_config_disturl: https://electronjs.org/headers
+          npm_config_target: 32.1.2
+          npm_config_runtime: electron
+          npm_config_build_from_source: true
+
+      - name: Prepare release artifacts
+        shell: bash
+        run: |
+          mkdir -p release
+          if [ -d "build/Release" ]; then
+            cp -r build/Release release/ || true
+          fi
+          if [ -d "dist" ]; then
+            cp -r dist release/ || true
+          fi
+          # Создаем архив для релиза
+          cd release
+          PLATFORM_NAME="${{ matrix.os }}"
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            PLATFORM_NAME="macos"
+            tar -czf ../node-window-manager-${{ github.ref_name }}-electron-32.1.2-${PLATFORM_NAME}.tar.gz .
+          elif [ "${{ runner.os }}" == "Windows" ]; then
+            PLATFORM_NAME="windows"
+            # Используем PowerShell Compress-Archive если доступно, иначе tar
+            powershell -Command "Compress-Archive -Path * -DestinationPath ../node-window-manager-${{ github.ref_name }}-electron-32.1.2-${PLATFORM_NAME}.zip -Force" || tar -czf ../node-window-manager-${{ github.ref_name }}-electron-32.1.2-${PLATFORM_NAME}.tar.gz .
+          fi
+          cd ..
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-electron-${{ matrix.os }}
+          path: |
+            release/
+            node-window-manager-*-electron-*.tar.gz
+            node-window-manager-*-electron-*.zip
+          retention-days: 90
+
+  create-release:
+    needs: [build-electron-release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Electron release artifacts (macOS)
+        uses: actions/download-artifact@v4
+        with:
+          name: release-electron-macos-latest
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Download Electron release artifacts (Windows)
+        uses: actions/download-artifact@v4
+        with:
+          name: release-electron-windows-latest
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Prepare release files
+        shell: bash
+        run: |
+          mkdir -p release-files
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release-files/ \;
+          ls -la release-files/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-files/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
