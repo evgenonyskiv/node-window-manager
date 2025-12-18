@@ -27,7 +27,7 @@ jobs:
         run: corepack enable
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --frozen-lockfile --ignore-scripts
 
       - name: Build TypeScript
         run: npm run build
@@ -90,7 +90,7 @@ jobs:
         run: corepack enable
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --frozen-lockfile --ignore-scripts
 
       - name: Build TypeScript
         run: npm run build
