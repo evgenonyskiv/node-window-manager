@@ -1,0 +1,118 @@
+name: Build Binaries
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+        node-version: [16.x, 18.x, 20.x]
+        exclude:
+          # Можно исключить некоторые комбинации если нужно
+    name: Build on ${{ matrix.os }} with Node ${{ matrix.node-version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Rebuild native module
+        run: npm run rebuild
+        env:
+          # Для macOS может потребоваться разрешение на доступность
+          SKIP_ACCESSIBILITY_CHECK: true
+
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          if [ -d "build/Release" ]; then
+            cp -r build/Release artifacts/ || true
+          fi
+          if [ -d "dist" ]; then
+            cp -r dist artifacts/ || true
+          fi
+          # Создаем файл с информацией о сборке
+          echo "Platform: ${{ matrix.os }}" > artifacts/build-info.txt
+          echo "Node version: ${{ matrix.node-version }}" >> artifacts/build-info.txt
+          echo "Build date: $(date)" >> artifacts/build-info.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries-${{ matrix.os }}-node-${{ matrix.node-version }}
+          path: artifacts/
+          retention-days: 30
+
+  build-electron:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    name: Build Electron 32.1.2 on ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Rebuild native module for Electron
+        run: |
+          npm_config_disturl=https://electronjs.org/headers \
+          npm_config_target=32.1.2 \
+          npm_config_runtime=electron \
+          npm_config_cache=$(npm config get cache) \
+          npm_config_build_from_source=true \
+          npm run rebuild
+        env:
+          SKIP_ACCESSIBILITY_CHECK: true
+
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          if [ -d "build/Release" ]; then
+            cp -r build/Release artifacts/ || true
+          fi
+          if [ -d "dist" ]; then
+            cp -r dist artifacts/ || true
+          fi
+          # Создаем файл с информацией о сборке
+          echo "Platform: ${{ matrix.os }}" > artifacts/build-info.txt
+          echo "Electron version: 32.1.2" >> artifacts/build-info.txt
+          echo "Build date: $(date)" >> artifacts/build-info.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries-${{ matrix.os }}-electron-32.1.2
+          path: artifacts/
+          retention-days: 30
+
